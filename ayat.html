@@ -1,0 +1,303 @@
+
+<html>
+	<head>
+		<title>Kelantan Word Translator</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="assets/css/main.css" />
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+    <style>
+
+      .bgimage{
+        background-image: url("../../images/bg.jpg");
+      }
+    </style>
+	</head>
+	<body>
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<span class="avatar"><img src="images/kelantan1.jpg" alt="" /></span>
+						<h1> <strong>Kelantan Accent Translator</strong> <br /> <strong>by Ayat</strong>
+						</h1>
+						
+					</header>
+
+				<!-- Main -->
+					<section id="main">
+
+						<!-- Thumbnails -->
+							<section class="thumbnails">
+                <style>
+							
+                  .box {
+                    background-image: url("../../images/bg.jpg");
+                    
+                  
+                    border: 1px solid #f1f1f1;
+                    perspective: 1000px;
+                    text-align: center;
+                  }
+                  </style>
+								<div>
+									<a class="voice" onclick="init()"><h3>Activate Voice</h3></a>
+                  <a class="voice1" onclick="init2()"><h3>Toogle Microphone</h3></a>	
+                  
+									
+                </div>
+                <div>
+                
+                </div>
+                <br>
+								
+
+                <align : right><div class="box" >
+
+									<h3>LIST OF WORD</h3>
+                  
+                  <div id="label-container" class="label-output"></div>
+                  <br>
+                </div>
+                <div class="box" >
+									<h3>RESULT</h3>
+                  <div id="label-input" class="label-output"></div>
+                  <div id="label-result" class="label-output"></div>
+                  <br>
+                  <br>
+									
+                  </div>
+                  
+                </div>
+              </align>
+ 
+								</div>
+								
+							</section>
+
+					</section>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<p>&copy; Kelate Bossku</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.poptrox.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/main.js"></script>
+            <script type="text/javascript">
+                // more documentation available at
+                // https://github.com/tensorflow/tfjs-models/tree/master/speech-commands
+            
+                // the link to your model provided by Teachable Machine export panel
+                const URL = "https://teachablemachine.withgoogle.com/models/CBSYrSxF9/";
+                var isRecording = false;
+                var countBackgroundNoise = 0;
+
+                var highestInputArray = [];
+                var highestOutputArray = [];
+            
+                console.log("testing 12");
+            
+                let recognizer;
+            
+                loadModel();
+              
+            
+                async function loadModel() {
+                  recognizer = await createModel();
+            
+                    const classLabels = recognizer.wordLabels(); // get class wordlabels
+            
+                    const labelContainer = document.getElementById("label-container");
+                      for (let i = 0; i < classLabels.length; i++) {
+                        labelContainer.appendChild(document.createElement("div"));
+                        labelContainer.childNodes[i].innerHTML = classLabels[i];
+            
+                     }
+                    }
+            
+                async function createModel() {
+                    const checkpointURL = URL + "model.json"; // model topology
+                    const metadataURL = URL + "metadata.json"; // model metadata
+            
+                    const recognizer = speechCommands.create(
+                        "BROWSER_FFT", // fourier transform type, not useful to change
+                        undefined, // speech commands vocabulary feature, not useful for your models
+                        checkpointURL,
+                        metadataURL);
+            
+                    // check that model and metadata are loaded via HTTPS requests.
+                    await recognizer.ensureModelLoaded();
+            
+                    return recognizer;
+                }
+            
+        
+                async function init2() {
+                    isRecording = !isRecording;
+                }
+
+                async function finishTalking(){ 
+                  if(isRecording){
+                  console.log("highestTranslationArray");
+                  console.log(highestOutputArray);
+                  
+
+                  const resultContainer = document.getElementById("label-result");
+                  const inputContainer = document.getElementById("label-input");
+
+
+                  resultContainer.childNodes[0].innerHTML = "Translation = " + highestOutputArray.join(" ");
+                  inputContainer.childNodes[0].innerHTML = "Ayat = " +highestInputArray.join(" ") ;
+
+                  isRecording = false;
+
+                }
+                }
+            
+            
+                async function init() {
+                    countBackgroundNoise = 0;
+
+                    isRecording = true;
+            
+                    const recognizer = await createModel();
+                    const classLabels = recognizer.wordLabels(); // get class wlabels
+                    const inputContainer = document.getElementById("label-input");
+                    const resultContainer = document.getElementById("label-result");
+                    const labelContainer = document.getElementById("label-container");
+                    // for (let i = 0; i < classLabels.length; i++) {
+                    //   labelContainer.appendChild(document.createElement("div"));
+                    //   labelContainer.childNodes[i].innerHTML = classLabels[i];
+            
+                    // }
+                    inputContainer.appendChild(document.createElement("div"));
+            
+                    resultContainer.appendChild(document.createElement("div"));
+
+                    // setInterval(finishTalking, 10000);
+            
+                    // listen() takes two arguments:
+                    // 1. A callback function that is invoked anytime a word is recognized.
+                    // 2. A configuration object with adjustable fields
+                    recognizer.listen(result => {
+                        const scores = result.scores; // probability of prediction for each class
+                        var highestPrediction = 0;
+                        var highestOriginal = "";
+                        var highestTranslation = "";
+                        var highestPosition = 0;
+            
+                        if(isRecording){
+            
+                        for (let i = 0; i < classLabels.length; i++) {
+                            // const classPrediction 
+                            if( scores < result.scores[i].toFixed(2)){
+                              highestPrediction = result.scores[i].toFixed(2);
+                              highestOriginal =classLabels[i];
+                              highestPosition = i;
+            
+                            }else{
+                              labelContainer.childNodes[i].style.backgroundColor = "grey";
+            
+                            }
+                          }
+                          labelContainer.childNodes[highestPosition].style.backgroundColor = "red";
+            
+                        if(highestOriginal === "Makey"){
+                                highestTranslation = "Makan";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Ikey"){
+                                highestTranslation = "Ikan";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Pitih"){
+                                highestTranslation = "Duit";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Mace"){
+                                highestTranslation = "Macam";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Oghe"){
+                                highestTranslation = "Orang";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Nok"){
+                                highestTranslation = "Nak";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Maso"){
+                                highestTranslation = "Masa";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Toksey"){
+                                highestTranslation = "Tak Mahu";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Tubik"){
+                                highestTranslation = "Keluar";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Kawe"){
+                                highestTranslation = "Aku";
+                                // isRecording = false;
+            
+                              }else if(highestOriginal ==="Mu"){
+                                highestTranslation = "Kau";
+                                // isRecording = false;
+            
+                              }else {
+                                //  highestTranslation = "listening..."
+            
+                                for (let i = 0; i < classLabels.length; i++) {
+                            // const classPrediction 
+                              labelContainer.childNodes[i].style.backgroundColor = "#031321";
+                                  }
+                              }
+                              if(highestOriginal != "Background Noise"){
+                               highestInputArray.push(highestOriginal);
+                               countBackgroundNoise = 0;
+                              }else{
+                                countBackgroundNoise++;
+                              }
+
+                              if(countBackgroundNoise == 2){
+                                finishTalking();
+                              }
+
+                              highestOutputArray.push(highestTranslation);
+
+                              console.log("background noise" + countBackgroundNoise);
+                            
+                              console.log("highest output" + highestTranslation);
+                              
+                              // inputContainer.childNodes[0].innerHTML = " Input = " +highestOriginal ;
+                              // resultContainer.childNodes[0].innerHTML = "Output = " +highestTranslation;
+                              
+                              
+                          }
+            
+            
+            
+                    }, {
+                        includeSpectrogram: true, // in case listen should return result.spectrogram
+                        probabilityThreshold: 0.75,
+                        invokeCallbackOnNoiseAndUnknown: true,
+                        overlapFactor: 0.50 // probably want between 0.5 and 0.75. More info in README
+                    });
+                //  setTimeout(() => {
+              //        document.getElementById(elementId).classList.remove('active');
+              //      }, 2500);
+                }
+            </script>
+	</body>
+</html>
